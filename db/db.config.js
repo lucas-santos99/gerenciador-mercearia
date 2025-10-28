@@ -1,31 +1,27 @@
 const { Pool } = require('pg');
 require('dotenv').config();
 
-// const url = new URL(process.env.DATABASE_URL); // REMOVA OU COMENTE ESTA LINHA
-
 const pool = new Pool({
-    // Use as variáveis de ambiente separadas
+    // Lê as novas variáveis (Host, Usuário, Porta) do Render
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
     database: process.env.DB_DATABASE,
     
+    // Voltamos à configuração de SSL padrão do Supabase
     ssl: {
         rejectUnauthorized: false
-    },
+    }
     
-    // Mantenha a correção do IPv4
-    family: 4 
+    // A linha 'family: 4' FOI REMOVIDA
+    // A linha 'server: ...' FOI REMOVIDA
 });
 
-// ... (o restante do código permanece igual)
-
-// Exporta as funções para o restante da aplicação
+// O restante do arquivo (module.exports) permanece igual
 module.exports = {
   query: (text, params) => pool.query(text, params),
   
-  // Função 'connect' para testar a conexão na inicialização
   connect: async () => {
     try {
       const client = await pool.connect();
@@ -33,7 +29,7 @@ module.exports = {
       client.release();
     } catch (err) {
       console.error("[ERRO] Falha ao conectar ao Supabase:", err.message);
-      console.error("[ERRO DETALHE] Verifique se a DATABASE_URL no seu .env está correta e limpa.");
+      console.error("[ERRO DETALHE] Verifique as variáveis de ambiente do Pooler.");
     }
   }
 };
