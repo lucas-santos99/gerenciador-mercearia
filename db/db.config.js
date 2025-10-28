@@ -18,7 +18,10 @@ const pool = new Pool({
     // Configuração de SSL para o Supabase
     ssl: {
         rejectUnauthorized: false
-    }
+    },
+    // ADICIONE ESTA LINHA:
+    // Isso força o Node.js a usar apenas IPv4 (família 4)
+    family: 4 
 });
 
 // Exporta as funções para o restante da aplicação
