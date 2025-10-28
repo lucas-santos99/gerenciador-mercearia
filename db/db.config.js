@@ -1,28 +1,25 @@
-// Adicione esta linha: 
 const { Pool } = require('pg');
-
-// Carrega as variáveis de ambiente (do .env)
 require('dotenv').config();
 
-// Transforma a URL de conexão (do .env) em um objeto
-const url = new URL(process.env.DATABASE_URL);
+// const url = new URL(process.env.DATABASE_URL); // REMOVA OU COMENTE ESTA LINHA
 
-// Configura o 'Pool' de conexões usando as partes da URL
 const pool = new Pool({
-    user: url.username,
-    password: url.password,
-    host: url.hostname,
-    port: url.port,
-    database: url.pathname.substring(1),
+    // Use as variáveis de ambiente separadas
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT,
+    database: process.env.DB_DATABASE,
     
-    // Configuração de SSL para o Supabase
     ssl: {
         rejectUnauthorized: false
     },
-    // ADICIONE ESTA LINHA:
-    // Isso força o Node.js a usar apenas IPv4 (família 4)
+    
+    // Mantenha a correção do IPv4
     family: 4 
 });
+
+// ... (o restante do código permanece igual)
 
 // Exporta as funções para o restante da aplicação
 module.exports = {
