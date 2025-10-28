@@ -1,0 +1,11 @@
+# Arquivos de Sistema
+/node_modules
+/.vscode
+
+# Variáveis de Ambiente e Arquivos de Build
+.env
+/dist
+/build
+
+# Log do NPM
+npm-debug.log
