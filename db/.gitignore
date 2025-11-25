@@ -1,11 +1,15 @@
-# Arquivos de Sistema
-/node_modules
-/.vscode
-
-# Variáveis de Ambiente e Arquivos de Build
-.env
-/dist
-/build
-
-# Log do NPM
+# Node
+node_modules/
 npm-debug.log
+package-lock.json
+
+# Ambiente
+.env
+.env.backup
+
+# Build
+dist/
+build/
+
+# VSCode
+.vscode/
