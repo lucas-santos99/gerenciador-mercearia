@@ -16,3 +16,5 @@ console.log("[INFO] Cliente Admin Supabase (Backend) inicializado.");
 
 // Exporta o cliente admin para ser usado nas rotas
 module.exports = supabaseAdmin;
+
+//teste
