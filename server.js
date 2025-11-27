@@ -34,12 +34,17 @@ app.get('/', (req, res) => {
   res.status(200).send('Servidor do Gerenciador de Mercearias online!');
 });
 
-// --- 5. ROTA KEEP-ALIVE PARA O UPTIMEROBOT ---
+// --- 5. PERMITIR HEAD PARA O UPTIMEROBOT (plano FREE usa HEAD) ---
+app.head('/ping', (req, res) => {
+  res.status(200).end(); // sem body
+});
+
+// --- 6. ROTA KEEP-ALIVE PARA TESTES (GET) ---
 app.get('/ping', (req, res) => {
   res.status(200).send('pong');
 });
 
-// --- 6. INÍCIO DO SERVIDOR ---
+// --- 7. INÍCIO DO SERVIDOR ---
 app.listen(PORT, () => {
   console.log(`\n\n[INFO] Servidor rodando na porta ${PORT}`);
   console.log(`[STATUS] Acesse: http://localhost:${PORT}`);
