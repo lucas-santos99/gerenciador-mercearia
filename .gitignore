@@ -15,9 +15,21 @@ node_modules/
 # 🔐 VARIÁVEIS DE AMBIENTE
 # ===============================
 .env
-.env.*
-!env.example
+.env.*          # ignora QUALQUER .env.* (ex: .env.local, .env.production)
+!.env.example    # exceto arquivo modelo
 .env.backup
+*.env            # segurança extra
+
+# ===============================
+# 🐘 BANCO DE DADOS (IMPORTANTE)
+# ===============================
+*.sql
+*.sqlite
+*.db
+*.db3
+*.sqlite3
+dump.sql
+backup.sql
 
 # ===============================
 # 📁 BUILD / ARTEFATOS DE DEPLOY
@@ -32,12 +44,14 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+*.log
 
 # ===============================
 # 🗄️ CACHE
 # ===============================
 .cache/
 .temp/
+.tmp/
 
 # ===============================
 # 🔧 SISTEMAS DE TESTES
@@ -45,7 +59,7 @@ pnpm-debug.log*
 coverage/
 
 # ===============================
-# 🔧 SISTEMAS DE TYPESCRIPT (caso um dia você migre)
+# 🔧 TYPESCRIPT (caso você use no futuro)
 # ===============================
 *.tsbuildinfo
 
@@ -53,3 +67,5 @@ coverage/
 # 🔒 BACKUPS
 # ===============================
 *.backup
+*.bak
+*.old

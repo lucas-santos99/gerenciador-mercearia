@@ -1,6 +1,6 @@
 // ===== routes/financeiroRoutes.js (COM ROTA DE PRODUTOS VENDIDOS) =====
 const express = require('express');
-const db = require('../db/db.config'); 
+const db = require('../db/supabaseAdmin'); 
 const router = express.Router();
 
 // --- 1. Rota GET: Listar Contas a Pagar ---

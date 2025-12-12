@@ -3,7 +3,7 @@
 // ============================================================
 
 const express = require('express');
-const db = require('../db/db.config');
+const db = require('../db/supabaseAdmin');
 const router = express.Router();
 
 

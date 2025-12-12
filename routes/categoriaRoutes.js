@@ -1,5 +1,5 @@
 const express = require('express');
-const db = require('../db/db.config'); // Cliente Supabase Admin
+const db = require('../db/supabaseAdmin'); // Cliente Supabase Admin
 const router = express.Router();
 
 // --- Rota GET: Buscar categorias ---
