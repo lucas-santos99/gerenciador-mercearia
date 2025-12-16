@@ -33,15 +33,23 @@ router.get("/excluidas", async (req, res) => {
     const { data, error } = await db
       .from("mercearias")
       .select("*")
-      .eq("status_assinatura", "excluida")
+      .in("status_assinatura", [
+        "excluida",
+        "excluído",
+        "Excluída",
+        "EXCLUIDA"
+      ])
       .order("created_at", { ascending: false });
 
-    if (error) return res.status(400).json({ error: error.message });
+    if (error) {
+      console.error("Erro Supabase:", error);
+      return res.status(400).json({ error: error.message });
+    }
 
-    res.json(data);
-  } catch (e) {
-    console.error("Erro listar excluídas:", e);
-    res.status(500).json({ error: "Erro ao listar excluídas" });
+    res.json(data || []);
+  } catch (err) {
+    console.error("Erro listar excluídas:", err);
+    res.status(500).json({ error: "Erro ao listar mercearias excluídas" });
   }
 });
 
