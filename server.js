@@ -26,7 +26,17 @@ const PORT = process.env.PORT || 3001;
 
 // --- MIDDLEWARES ---
 app.use(express.json({ limit: '20mb' }));
-app.use(cors());
+
+// --- CORS CONFIGURAÇÃO ---
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",  // Para local
+      "https://gerenciador-mercearia-frontend.onrender.com"  // Para produção
+    ],
+    credentials: true,  // Permite o envio de cookies (importante!)
+  })
+);
 
 // --- ROTAS DO ADMIN (super_admin) ---
 app.use("/admin/mercearias", adminMerceariasRoutes);
