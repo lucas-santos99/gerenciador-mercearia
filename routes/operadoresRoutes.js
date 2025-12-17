@@ -1,20 +1,62 @@
 // routes/operadoresRoutes.js
 const express = require("express");
 const router = express.Router();
-const db = require("../db/supabaseAdmin"); // seu cliente PostgreSQL
+const db = require("../db/supabaseAdmin");
 const { v4: uuidv4 } = require("uuid");
 
 /* ============================================================
    FUNÇÕES AUXILIARES
-   ============================================================ */
+============================================================ */
 async function buscarOperadorPorId(id) {
   const q = await db.query("SELECT * FROM operadores WHERE id = $1", [id]);
   return q.rows[0];
 }
 
 /* ============================================================
+   🔐 VALIDAR ACESSO DO OPERADOR (LOGIN)
+   POST /operadores/validar-acesso
+============================================================ */
+router.post("/validar-acesso", async (req, res) => {
+  const { userId } = req.body;
+
+  if (!userId) {
+    return res.status(400).json({ error: "Usuário inválido" });
+  }
+
+  try {
+    const q = await db.query(
+      `SELECT id, status
+       FROM operadores
+       WHERE id = $1`,
+      [userId]
+    );
+
+    const operador = q.rows[0];
+
+    if (!operador) {
+      return res.status(403).json({
+        error: "Usuário não vinculado a um operador",
+      });
+    }
+
+    if (operador.status !== "ativo") {
+      return res.status(403).json({
+        error:
+          "Seu acesso está desativado. Entre em contato com o administrador.",
+      });
+    }
+
+    // ✅ acesso liberado
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Erro validar acesso:", err);
+    res.status(500).json({ error: "Erro interno ao validar acesso" });
+  }
+});
+
+/* ============================================================
    1) LISTAR OPERADORES DE UMA MERCEARIA (ADMIN + MERCHANT)
-   ============================================================ */
+============================================================ */
 router.get("/admin/operadores/:merceariaId", async (req, res) => {
   const { merceariaId } = req.params;
   try {
@@ -34,7 +76,7 @@ router.get("/admin/operadores/:merceariaId", async (req, res) => {
 
 /* ============================================================
    2) DETALHES DO OPERADOR
-   ============================================================ */
+============================================================ */
 router.get("/admin/operadores/detalhes/:id", async (req, res) => {
   const { id } = req.params;
   try {
@@ -50,7 +92,7 @@ router.get("/admin/operadores/detalhes/:id", async (req, res) => {
 
 /* ============================================================
    3) CRIAR OPERADOR (ADMIN)
-   ============================================================ */
+============================================================ */
 router.post("/admin/operadores/criar", async (req, res) => {
   const { mercearia_id, nome, email, telefone, senha } = req.body;
 
@@ -58,11 +100,6 @@ router.post("/admin/operadores/criar", async (req, res) => {
     return res.status(400).json({ error: "Nome e email são obrigatórios" });
 
   try {
-    // Se usar Supabase Auth — ADAPTAR
-    // const { data: user, error } = await supabaseAdmin.auth.api.createUser({
-    //   email, password: senha
-    // });
-
     const newId = uuidv4();
 
     await db.query(
@@ -80,7 +117,7 @@ router.post("/admin/operadores/criar", async (req, res) => {
 
 /* ============================================================
    4) EDITAR OPERADOR
-   ============================================================ */
+============================================================ */
 router.put("/admin/operadores/:id", async (req, res) => {
   const { id } = req.params;
   const { nome, email, telefone, status } = req.body;
@@ -104,8 +141,8 @@ router.put("/admin/operadores/:id", async (req, res) => {
 });
 
 /* ============================================================
-   5) ALTERAR STATUS: ATIVAR / INATIVAR
-   ============================================================ */
+   5) ALTERAR STATUS
+============================================================ */
 router.put("/admin/operadores/:id/status", async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
@@ -129,36 +166,18 @@ router.put("/admin/operadores/:id/status", async (req, res) => {
 });
 
 /* ============================================================
-   6) RESETAR SENHA (ADMIN — MANUAL)
-   ============================================================ */
+   6) RESETAR SENHA (placeholder)
+============================================================ */
 router.put("/admin/operadores/:id/resetar-senha", async (req, res) => {
-  const { id } = req.params;
-  const { novaSenha } = req.body;
-
-  if (!novaSenha || novaSenha.length < 6)
-    return res
-      .status(400)
-      .json({ error: "Senha deve ter no mínimo 6 caracteres" });
-
-  try {
-    // ADAPTAR PARA SUPABASE AUTH → implementar aqui.
-    // Exemplo:
-    // const op = await buscarOperadorPorId(id);
-    // await supabaseAdmin.auth.api.updateUserById(op.auth_id, { password: novaSenha })
-
-    res.json({
-      sucesso: true,
-      msg: "Senha alterada — implemente a integração com o Auth",
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Erro ao resetar senha" });
-  }
+  res.json({
+    sucesso: true,
+    msg: "Integração com Auth será feita depois",
+  });
 });
 
 /* ============================================================
    7) EXCLUIR OPERADOR
-   ============================================================ */
+============================================================ */
 router.delete("/admin/operadores/:id", async (req, res) => {
   const { id } = req.params;
 
@@ -172,10 +191,8 @@ router.delete("/admin/operadores/:id", async (req, res) => {
 });
 
 /* ============================================================
-   8) ROTAS PARA MERCHANT
-   ============================================================ */
-
-// Listar operadores dentro da própria mercearia
+   8) ROTAS MERCHANT
+============================================================ */
 router.get("/mercearia/:id/operadores", async (req, res) => {
   const { id: merceariaId } = req.params;
 
@@ -195,7 +212,6 @@ router.get("/mercearia/:id/operadores", async (req, res) => {
   }
 });
 
-// Criar operador (merchant)
 router.post("/mercearia/:id/operadores/criar", async (req, res) => {
   const { id: merceariaId } = req.params;
   const { nome, email, telefone } = req.body;

@@ -1,4 +1,4 @@
-// ===== routes/operadoresRoutes.js =====
+// ===== routes/adminOperadoresRoutes.js =====
 const express = require("express");
 const router = express.Router();
 const db = require("../db/supabaseAdmin"); // cliente SUPABASE ADMIN
@@ -31,7 +31,7 @@ router.get("/:merceariaId", async (req, res) => {
 
 /* ============================================================
    BUSCAR UM OPERADOR
-   GET /admin/operador/detalhes/:id
+   GET /admin/operadores/detalhes/:id
 ============================================================ */
 router.get("/detalhes/:id", async (req, res) => {
   try {
@@ -60,12 +60,29 @@ router.post("/criar", async (req, res) => {
   try {
     const { nome, email, telefone, senha, mercearia_id } = req.body;
 
-    // Criar usuário
-    const { data: userData, error: userErr } = await db.auth.admin.createUser({
-      email,
-      password: senha,
-      email_confirm: true,
-    });
+    /* ===============================
+       🔐 VALIDAÇÃO DE EMAIL (NOVA)
+    ================================ */
+    const { data: operadorExistente } = await db
+      .from("operadores")
+      .select("id, status")
+      .eq("email", email)
+      .maybeSingle();
+
+    if (operadorExistente) {
+      return res.status(400).json({
+        error:
+          "Já existe um operador cadastrado com este e-mail, mesmo que esteja excluído.",
+      });
+    }
+
+    // Criar usuário no Supabase Auth
+    const { data: userData, error: userErr } =
+      await db.auth.admin.createUser({
+        email,
+        password: senha,
+        email_confirm: true,
+      });
 
     if (userErr) return res.status(400).json({ error: userErr.message });
 
@@ -81,7 +98,7 @@ router.post("/criar", async (req, res) => {
         email,
         telefone,
         foto_url: null,
-        status: "ativo"
+        status: "ativo",
       })
       .select()
       .single();
@@ -95,12 +112,11 @@ router.post("/criar", async (req, res) => {
         role: "operator",
         mercearia_id,
         nome,
-        email
+        email,
       })
       .eq("id", userId);
 
     res.json({ success: true, operador: data });
-
   } catch (e) {
     console.error("Erro criar operador:", e);
     res.status(500).json({ error: "Erro interno ao criar operador" });
@@ -118,7 +134,7 @@ router.put("/:id", async (req, res) => {
 
     const updateData = { nome, telefone, email };
 
-    // 👉 só atualiza status se vier no body
+    // só atualiza status se vier no body
     if (status) {
       updateData.status = status;
     }
@@ -133,13 +149,9 @@ router.put("/:id", async (req, res) => {
     if (error) return res.status(400).json({ error: error.message });
 
     // atualizar profile também
-    await db
-      .from("profiles")
-      .update({ nome, email })
-      .eq("id", id);
+    await db.from("profiles").update({ nome, email }).eq("id", id);
 
     res.json({ success: true, operador: data });
-
   } catch (e) {
     console.error("Erro editar operador:", e);
     res.status(500).json({ error: "Erro interno ao editar operador" });
@@ -162,7 +174,6 @@ router.delete("/:id", async (req, res) => {
     if (error) return res.status(400).json({ error: error.message });
 
     res.json({ success: true });
-
   } catch (e) {
     console.error("Erro excluir operador:", e);
     res.status(500).json({ error: "Erro interno" });
@@ -185,7 +196,6 @@ router.put("/:id/restaurar", async (req, res) => {
     if (error) return res.status(400).json({ error: error.message });
 
     res.json({ success: true });
-
   } catch (e) {
     console.error("Erro restaurar operador:", e);
     res.status(500).json({ error: "Erro interno" });
@@ -194,7 +204,6 @@ router.put("/:id/restaurar", async (req, res) => {
 
 /* ============================================================
    UPLOAD FOTO DO OPERADOR
-   POST /admin/operadores/:id/upload-foto
 ============================================================ */
 router.post("/:id/upload-foto", upload.single("foto"), async (req, res) => {
   try {
@@ -223,7 +232,6 @@ router.post("/:id/upload-foto", upload.single("foto"), async (req, res) => {
       .eq("id", id);
 
     res.json({ success: true, foto_url: data.publicUrl });
-
   } catch (e) {
     console.error("Erro upload foto:", e);
     res.status(500).json({ error: "Erro interno" });
@@ -232,7 +240,6 @@ router.post("/:id/upload-foto", upload.single("foto"), async (req, res) => {
 
 /* ============================================================
    REMOVER FOTO
-   DELETE /admin/operadores/:id/remover-foto
 ============================================================ */
 router.delete("/:id/remover-foto", async (req, res) => {
   try {
@@ -252,13 +259,9 @@ router.delete("/:id/remover-foto", async (req, res) => {
 
     await db.storage.from("logos").remove([path]);
 
-    await db
-      .from("operadores")
-      .update({ foto_url: null })
-      .eq("id", id);
+    await db.from("operadores").update({ foto_url: null }).eq("id", id);
 
     res.json({ success: true });
-
   } catch (e) {
     console.error("Erro remover foto:", e);
     res.status(500).json({ error: "Erro interno" });
@@ -267,7 +270,6 @@ router.delete("/:id/remover-foto", async (req, res) => {
 
 /* ============================================================
    RESETAR SENHA DO OPERADOR
-   POST /admin/operadores/:id/reset-senha
 ============================================================ */
 router.post("/:id/reset-senha", async (req, res) => {
   try {
@@ -275,20 +277,18 @@ router.post("/:id/reset-senha", async (req, res) => {
     const { senha } = req.body;
 
     if (!senha || senha.length < 6) {
-      return res.status(400).json({ error: "Senha inválida (mín. 6 caracteres)" });
+      return res
+        .status(400)
+        .json({ error: "Senha inválida (mín. 6 caracteres)" });
     }
 
-    const { data, error } = await db.auth.admin.updateUserById(id, {
+    const { error } = await db.auth.admin.updateUserById(id, {
       password: senha,
     });
 
-    if (error) {
-      console.error("Erro reset senha:", error);
-      return res.status(400).json({ error: error.message });
-    }
+    if (error) return res.status(400).json({ error: error.message });
 
     res.json({ success: true });
-
   } catch (err) {
     console.error("Erro interno reset senha:", err);
     res.status(500).json({ error: "Erro interno" });
@@ -296,8 +296,7 @@ router.post("/:id/reset-senha", async (req, res) => {
 });
 
 /* ============================================================
-   ATUALIZAR STATUS DO OPERADOR (ATIVO / INATIVO)
-   PUT /admin/operadores/:id/status
+   ATUALIZAR STATUS DO OPERADOR
 ============================================================ */
 router.put("/:id/status", async (req, res) => {
   try {
@@ -318,12 +317,10 @@ router.put("/:id/status", async (req, res) => {
     if (error) return res.status(400).json({ error: error.message });
 
     res.json({ success: true, operador: data });
-
   } catch (e) {
     console.error("Erro atualizar status operador:", e);
     res.status(500).json({ error: "Erro interno" });
   }
 });
-
 
 module.exports = router;
