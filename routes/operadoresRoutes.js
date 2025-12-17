@@ -13,7 +13,7 @@ async function buscarOperadorPorId(id) {
 }
 
 /* ============================================================
-   🔐 VALIDAR ACESSO DO OPERADOR (LOGIN)
+   🔐 VALIDAR ACESSO (LOGIN)
    POST /operadores/validar-acesso
 ============================================================ */
 router.post("/validar-acesso", async (req, res) => {
@@ -24,30 +24,55 @@ router.post("/validar-acesso", async (req, res) => {
   }
 
   try {
-    const q = await db.query(
-      `SELECT id, status
-       FROM operadores
-       WHERE id = $1`,
+    // 1️⃣ Buscar perfil
+    const profileQ = await db.query(
+      `SELECT role FROM profiles WHERE id = $1`,
       [userId]
     );
 
-    const operador = q.rows[0];
+    const profile = profileQ.rows[0];
 
-    if (!operador) {
+    if (!profile) {
       return res.status(403).json({
-        error: "Usuário não vinculado a um operador",
+        error: "Perfil de usuário não encontrado",
       });
     }
 
-    if (operador.status !== "ativo") {
-      return res.status(403).json({
-        error:
-          "Seu acesso está desativado. Entre em contato com o administrador.",
-      });
+    // 2️⃣ ADMIN → acesso sempre liberado
+    if (profile.role === "admin") {
+      return res.json({ success: true });
     }
 
-    // ✅ acesso liberado
-    res.json({ success: true });
+    // 3️⃣ OPERADOR → validar status
+    if (profile.role === "operator") {
+      const opQ = await db.query(
+        `SELECT status FROM operadores WHERE id = $1`,
+        [userId]
+      );
+
+      const operador = opQ.rows[0];
+
+      if (!operador) {
+        return res.status(403).json({
+          error: "Usuário não vinculado a um operador",
+        });
+      }
+
+      if (operador.status !== "ativo") {
+        return res.status(403).json({
+          error:
+            "Seu acesso está desativado. Entre em contato com o administrador.",
+        });
+      }
+
+      return res.json({ success: true });
+    }
+
+    // 4️⃣ Qualquer outro papel
+    return res.status(403).json({
+      error: "Usuário sem permissão de acesso",
+    });
+
   } catch (err) {
     console.error("Erro validar acesso:", err);
     res.status(500).json({ error: "Erro interno ao validar acesso" });
@@ -94,7 +119,7 @@ router.get("/admin/operadores/detalhes/:id", async (req, res) => {
    3) CRIAR OPERADOR (ADMIN)
 ============================================================ */
 router.post("/admin/operadores/criar", async (req, res) => {
-  const { mercearia_id, nome, email, telefone, senha } = req.body;
+  const { mercearia_id, nome, email, telefone } = req.body;
 
   if (!nome || !email)
     return res.status(400).json({ error: "Nome e email são obrigatórios" });
