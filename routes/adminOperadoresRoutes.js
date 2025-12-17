@@ -114,12 +114,18 @@ router.post("/criar", async (req, res) => {
 router.put("/:id", async (req, res) => {
   try {
     const { id } = req.params;
+    const { nome, telefone, email, status } = req.body;
 
-    const { nome, telefone, email } = req.body;
+    const updateData = { nome, telefone, email };
+
+    // 👉 só atualiza status se vier no body
+    if (status) {
+      updateData.status = status;
+    }
 
     const { data, error } = await db
       .from("operadores")
-      .update({ nome, telefone, email })
+      .update(updateData)
       .eq("id", id)
       .select()
       .single();
@@ -285,6 +291,36 @@ router.post("/:id/reset-senha", async (req, res) => {
 
   } catch (err) {
     console.error("Erro interno reset senha:", err);
+    res.status(500).json({ error: "Erro interno" });
+  }
+});
+
+/* ============================================================
+   ATUALIZAR STATUS DO OPERADOR (ATIVO / INATIVO)
+   PUT /admin/operadores/:id/status
+============================================================ */
+router.put("/:id/status", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!["ativo", "inativo"].includes(status)) {
+      return res.status(400).json({ error: "Status inválido" });
+    }
+
+    const { data, error } = await db
+      .from("operadores")
+      .update({ status })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) return res.status(400).json({ error: error.message });
+
+    res.json({ success: true, operador: data });
+
+  } catch (e) {
+    console.error("Erro atualizar status operador:", e);
     res.status(500).json({ error: "Erro interno" });
   }
 });
