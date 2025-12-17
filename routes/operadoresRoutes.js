@@ -24,40 +24,17 @@ router.post("/validar-acesso", async (req, res) => {
   }
 
   try {
-    // 1️⃣ Buscar perfil
-    const profileQ = await db.query(
-      `SELECT role FROM profiles WHERE id = $1`,
+    /* =====================================================
+       1️⃣ VERIFICA OPERADOR
+    ===================================================== */
+    const operadorQ = await db.query(
+      `SELECT status FROM operadores WHERE id = $1`,
       [userId]
     );
 
-    const profile = profileQ.rows[0];
+    const operador = operadorQ.rows[0];
 
-    if (!profile) {
-      return res.status(403).json({
-        error: "Perfil de usuário não encontrado",
-      });
-    }
-
-    // 2️⃣ ADMIN → acesso sempre liberado
-    if (profile.role === "admin") {
-      return res.json({ success: true });
-    }
-
-    // 3️⃣ OPERADOR → validar status
-    if (profile.role === "operator") {
-      const opQ = await db.query(
-        `SELECT status FROM operadores WHERE id = $1`,
-        [userId]
-      );
-
-      const operador = opQ.rows[0];
-
-      if (!operador) {
-        return res.status(403).json({
-          error: "Usuário não vinculado a um operador",
-        });
-      }
-
+    if (operador) {
       if (operador.status !== "ativo") {
         return res.status(403).json({
           error:
@@ -68,10 +45,24 @@ router.post("/validar-acesso", async (req, res) => {
       return res.json({ success: true });
     }
 
-    // 4️⃣ Qualquer outro papel
-    return res.status(403).json({
-      error: "Usuário sem permissão de acesso",
-    });
+    /* =====================================================
+       2️⃣ VERIFICA MERCEARIA (MERCHANT)
+    ===================================================== */
+    const merceariaQ = await db.query(
+      `SELECT id FROM mercearias WHERE id = $1`,
+      [userId]
+    );
+
+    const mercearia = merceariaQ.rows[0];
+
+    if (mercearia) {
+      return res.json({ success: true });
+    }
+
+    /* =====================================================
+       3️⃣ SE NÃO É OPERADOR NEM MERCEARIA → ADMIN
+    ===================================================== */
+    return res.json({ success: true });
 
   } catch (err) {
     console.error("Erro validar acesso:", err);
