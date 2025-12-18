@@ -219,4 +219,59 @@ router.post("/mercearia/:id/operadores/criar", async (req, res) => {
   }
 });
 
+/* ============================================================
+   🔍 DIAGNÓSTICO DE USUÁRIO (SEM BLOQUEIO)
+   POST /operadores/diagnostico
+============================================================ */
+router.post("/diagnostico", async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ error: "E-mail não informado" });
+  }
+
+  try {
+    /* ===============================
+       1️⃣ VERIFICA OPERADOR
+    =============================== */
+    const operadorQ = await db.query(
+      `SELECT status FROM operadores WHERE email = $1`,
+      [email]
+    );
+
+    if (operadorQ.rows.length > 0) {
+      return res.json({
+        tipo: "operador",
+        status: operadorQ.rows[0].status,
+      });
+    }
+
+    /* ===============================
+       2️⃣ VERIFICA MERCEARIA
+    =============================== */
+    const merceariaQ = await db.query(
+      `SELECT id FROM mercearias WHERE email = $1`,
+      [email]
+    );
+
+    if (merceariaQ.rows.length > 0) {
+      return res.json({
+        tipo: "mercearia",
+      });
+    }
+
+    /* ===============================
+       3️⃣ SE NÃO FOR NENHUM → ADMIN
+    =============================== */
+    return res.json({
+      tipo: "admin",
+    });
+
+  } catch (err) {
+    console.error("Erro diagnóstico usuário:", err);
+    res.status(500).json({ error: "Erro interno no diagnóstico" });
+  }
+});
+
+
 module.exports = router;
